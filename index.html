@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C0 Sort Wash Dashboard</title>
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">Sort<span>Wash</span></div>
+      <nav class="nav">
+        <button class="nav-tab active" data-view="dashboard">Dashboard</button>
+        <button class="nav-tab" data-view="log">Daily Log</button>
+        <button class="nav-tab" data-view="bridges">Bridges</button>
+      </nav>
+      <button class="btn btn-primary" id="addEntryBtn">+ Add Shift</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="page-head">
+        <div>
+          <h1>C0 Sort Wash Dashboard</h1>
+          <p id="dashSub">Daily shift performance — volume, TPH, SSP & WIP compliance</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost" id="exportCsvBtn">Export CSV</button>
+          <button class="btn btn-ghost" id="seedBtn">Reset Demo</button>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpiRow"></div>
+      <div class="charts-row">
+        <div class="card chart-card">
+          <h3>Processed vs Planned Volume</h3>
+          <div class="chart-wrap"><canvas id="volChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <h3>Sort TPH vs Plan</h3>
+          <div class="chart-wrap"><canvas id="tphChart"></canvas></div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="card chart-card">
+          <h3>SSP & WIP Compliance Trend</h3>
+          <div class="chart-wrap"><canvas id="qualChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <h3>Process Path Variance (Latest Shift)</h3>
+          <div class="chart-wrap"><canvas id="bridgeChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DAILY LOG -->
+    <section class="view" id="view-log">
+      <div class="page-head">
+        <div>
+          <h1>Daily Shift Log</h1>
+          <p><span id="logInfo">0 shifts</span></p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="addEntryBtn2">+ Add Shift</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="filters">
+          <input type="text" id="searchInput" placeholder="Search date, notes...">
+          <span class="muted" id="filterInfo"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table" id="logTable">
+            <thead>
+              <tr>
+                <th>Date</th><th class="num">Processed</th><th class="num">Planned</th>
+                <th class="num">Vol Var</th><th class="num">Sort TPH</th><th class="num">TPH Plan</th>
+                <th class="num">SSP</th><th class="num">WIP</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRIDGES -->
+    <section class="view" id="view-bridges">
+      <div class="page-head">
+        <div>
+          <h1>Process Path Bridges</h1>
+          <p>UPH & labor hour variance by process path — select a shift</p>
+        </div>
+        <div class="page-actions">
+          <select id="bridgeDateSelect" class="bridge-select"></select>
+        </div>
+      </div>
+      <div class="alert info" id="bridgeAlert"></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table" id="bridgeTable">
+            <thead>
+              <tr>
+                <th>Process Path</th><th class="num">Act UPH</th><th class="num">Plan UPH</th>
+                <th class="num">UPH Var</th><th class="num">Act Hours</th><th class="num">Plan Hours</th>
+                <th class="num">Hrs Var</th><th>Root Cause / Notes</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">Add Shift</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <form id="entryForm">
+        <input type="hidden" id="entryId">
+        <div class="form-grid">
+          <div class="field"><label>Date *</label><input type="date" id="f_date" required></div>
+          <div class="field"><label>Processed Volume *</label><input type="number" id="f_processed" min="0" required></div>
+          <div class="field"><label>Planned Volume *</label><input type="number" id="f_planned" min="0" required></div>
+          <div class="field"><label>Sort TPH (actual) *</label><input type="number" id="f_sortTph" step="0.01" required></div>
+          <div class="field"><label>Sort TPH Plan *</label><input type="number" id="f_sortTphPlan" step="0.01" required></div>
+          <div class="field"><label>SSP %</label><input type="number" id="f_ssp" step="0.01" min="0" max="100" value="99.95"></div>
+          <div class="field"><label>WIP Compliance %</label><input type="number" id="f_wip" step="0.01" min="0" max="100" value="100"></div>
+          <div class="field"><label>High WIP Intervals</label><input type="number" id="f_highWip" min="0" value="0"></div>
+          <div class="field"><label>Induct BRT (hrs)</label><input type="number" id="f_brt" step="0.01" value="2.0"></div>
+          <div class="field full"><label>Notes</label><textarea id="f_notes" rows="3" placeholder="Site processed XX.Xk on a plan of XX.Xk..."></textarea></div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Shift</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="site-footer"><div class="container">C0 Sort Wash Dashboard — Inspired by Amazon Logistics Area Manager daily operational reporting. Sample data for portfolio demonstration.</div></footer>
+
+  <script src="./assets/js/utils.js"></script>
+  <script src="./assets/js/data.js"></script>
+  <script src="./assets/js/app.js"></script>
+</body>
+</html>
